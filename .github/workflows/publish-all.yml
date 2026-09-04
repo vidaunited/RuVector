@@ -193,8 +193,15 @@ jobs:
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4
 
+      - name: Prepare publish log directory
+        run: mkdir -p publish-logs
+
       - name: Publish ruvector-math
-        run: cargo publish -p ruvector-math --allow-dirty
+        id: pub-ruvector-math
+        shell: bash
+        run: |
+          set -o pipefail
+          cargo publish -p ruvector-math --allow-dirty 2>&1 | tee "publish-logs/ruvector-math.log"
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
         continue-on-error: true
@@ -203,7 +210,11 @@ jobs:
         run: sleep 30
 
       - name: Publish ruvector-attention
-        run: cargo publish -p ruvector-attention --allow-dirty
+        id: pub-ruvector-attention
+        shell: bash
+        run: |
+          set -o pipefail
+          cargo publish -p ruvector-attention --allow-dirty 2>&1 | tee "publish-logs/ruvector-attention.log"
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
         continue-on-error: true
@@ -212,13 +223,21 @@ jobs:
         run: sleep 30
 
       - name: Publish ruvector-math-wasm
-        run: cargo publish -p ruvector-math-wasm --allow-dirty
+        id: pub-ruvector-math-wasm
+        shell: bash
+        run: |
+          set -o pipefail
+          cargo publish -p ruvector-math-wasm --allow-dirty 2>&1 | tee "publish-logs/ruvector-math-wasm.log"
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
         continue-on-error: true
 
       - name: Publish ruvector-attention-wasm
-        run: cargo publish -p ruvector-attention-wasm --allow-dirty
+        id: pub-ruvector-attention-wasm
+        shell: bash
+        run: |
+          set -o pipefail
+          cargo publish -p ruvector-attention-wasm --allow-dirty 2>&1 | tee "publish-logs/ruvector-attention-wasm.log"
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
         continue-on-error: true
@@ -231,7 +250,11 @@ jobs:
         run: sleep 30
 
       - name: Publish ruvector-mincut
-        run: cargo publish -p ruvector-mincut --allow-dirty
+        id: pub-ruvector-mincut
+        shell: bash
+        run: |
+          set -o pipefail
+          cargo publish -p ruvector-mincut --allow-dirty 2>&1 | tee "publish-logs/ruvector-mincut.log"
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
         continue-on-error: true
@@ -240,13 +263,21 @@ jobs:
         run: sleep 30
 
       - name: Publish ruvector-graph-condense
-        run: cargo publish -p ruvector-graph-condense --allow-dirty
+        id: pub-ruvector-graph-condense
+        shell: bash
+        run: |
+          set -o pipefail
+          cargo publish -p ruvector-graph-condense --allow-dirty 2>&1 | tee "publish-logs/ruvector-graph-condense.log"
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
         continue-on-error: true
 
       - name: Publish ruvector-perception
-        run: cargo publish -p ruvector-perception --allow-dirty
+        id: pub-ruvector-perception
+        shell: bash
+        run: |
+          set -o pipefail
+          cargo publish -p ruvector-perception --allow-dirty 2>&1 | tee "publish-logs/ruvector-perception.log"
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
         continue-on-error: true
@@ -255,22 +286,54 @@ jobs:
         run: sleep 30
 
       - name: Publish ruvector-graph-condense-wasm
-        run: cargo publish -p ruvector-graph-condense-wasm --allow-dirty
+        id: pub-ruvector-graph-condense-wasm
+        shell: bash
+        run: |
+          set -o pipefail
+          cargo publish -p ruvector-graph-condense-wasm --allow-dirty 2>&1 | tee "publish-logs/ruvector-graph-condense-wasm.log"
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
         continue-on-error: true
 
-      - name: Summary
+      # Every publish step above is continue-on-error so that a crate/package
+      # that is already on the registry (re-run of a partially finished
+      # release) does not abort the rest. That also used to hide every OTHER
+      # failure. This step re-reads each outcome and fails the job unless the
+      # captured log shows the registry's "already published" message.
+      - name: Fail on unexpected publish failures
+        if: ${{ !cancelled() }}
+        shell: bash
+        env:
+          OUTCOMES: |
+            ruvector-math=${{ steps.pub-ruvector-math.outcome }}
+            ruvector-attention=${{ steps.pub-ruvector-attention.outcome }}
+            ruvector-math-wasm=${{ steps.pub-ruvector-math-wasm.outcome }}
+            ruvector-attention-wasm=${{ steps.pub-ruvector-attention-wasm.outcome }}
+            ruvector-mincut=${{ steps.pub-ruvector-mincut.outcome }}
+            ruvector-graph-condense=${{ steps.pub-ruvector-graph-condense.outcome }}
+            ruvector-perception=${{ steps.pub-ruvector-perception.outcome }}
+            ruvector-graph-condense-wasm=${{ steps.pub-ruvector-graph-condense-wasm.outcome }}
         run: |
-          echo "## crates.io Publishing" >> $GITHUB_STEP_SUMMARY
-          echo "✅ ruvector-math" >> $GITHUB_STEP_SUMMARY
-          echo "✅ ruvector-attention" >> $GITHUB_STEP_SUMMARY
-          echo "✅ ruvector-math-wasm" >> $GITHUB_STEP_SUMMARY
-          echo "✅ ruvector-attention-wasm" >> $GITHUB_STEP_SUMMARY
-          echo "✅ ruvector-mincut" >> $GITHUB_STEP_SUMMARY
-          echo "✅ ruvector-graph-condense" >> $GITHUB_STEP_SUMMARY
-          echo "✅ ruvector-perception" >> $GITHUB_STEP_SUMMARY
-          echo "✅ ruvector-graph-condense-wasm" >> $GITHUB_STEP_SUMMARY
+          already_re='already (uploaded|exists)|cannot publish over|previously published|EPUBLISHCONFLICT'
+          status=0
+          echo "## crates.io Publishing" >> "$GITHUB_STEP_SUMMARY"
+          while IFS== read -r name outcome; do
+            [ -z "$name" ] && continue
+            log="publish-logs/${name}.log"
+            case "$outcome" in
+              success) line="✅ $name";;
+              skipped) line="⏭️ $name (skipped)";;
+              failure)
+                if [ -f "$log" ] && grep -qiE "$already_re" "$log"; then
+                  line="ℹ️ $name (already published — tolerated)"
+                else
+                  line="❌ $name (publish FAILED — see step log)"; status=1
+                fi;;
+              *) line="❓ $name (outcome: $outcome)"; status=1;;
+            esac
+            echo "$line"; echo "- $line" >> "$GITHUB_STEP_SUMMARY"
+          done <<< "$OUTCOMES"
+          exit "$status"
 
   # ============================================================================
   # Phase 5: Publish to npm
@@ -298,30 +361,47 @@ jobs:
       - name: List downloaded artifacts
         run: find artifacts -type f -name "*.node" -o -name "*.wasm" | head -50
 
+      - name: Prepare publish log directory
+        run: mkdir -p publish-logs
+
       # --- Publish WASM packages ---
       - name: Publish @ruvector/math-wasm to npm
+        id: pub-math-wasm
+        shell: bash
         run: |
+          set -o pipefail
+          {
           cd artifacts/wasm-ruvector-math-wasm
           # Update package name to scoped
           jq '.name = "@ruvector/math-wasm"' package.json > tmp.json && mv tmp.json package.json
           npm publish --access public
+          } 2>&1 | tee "$GITHUB_WORKSPACE/publish-logs/math-wasm.log"
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         continue-on-error: true
 
       - name: Publish @ruvector/attention-wasm to npm
+        id: pub-attention-wasm
+        shell: bash
         run: |
+          set -o pipefail
+          {
           cd artifacts/wasm-ruvector-attention-wasm
           # Update package name to scoped
           jq '.name = "@ruvector/attention-wasm"' package.json > tmp.json && mv tmp.json package.json
           npm publish --access public
+          } 2>&1 | tee "$GITHUB_WORKSPACE/publish-logs/attention-wasm.log"
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         continue-on-error: true
 
       # --- Publish platform-specific native packages ---
       - name: Prepare and publish @ruvector/attention-linux-x64-gnu
+        id: pub-attention-linux-x64-gnu
+        shell: bash
         run: |
+          set -o pipefail
+          {
           mkdir -p publish/linux-x64-gnu
           cp artifacts/native-linux-x64-gnu/*.node publish/linux-x64-gnu/
           cd publish/linux-x64-gnu
@@ -339,12 +419,17 @@ jobs:
           }
           EOF
           npm publish --access public
+          } 2>&1 | tee "$GITHUB_WORKSPACE/publish-logs/attention-linux-x64-gnu.log"
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         continue-on-error: true
 
       - name: Prepare and publish @ruvector/attention-linux-arm64-gnu
+        id: pub-attention-linux-arm64-gnu
+        shell: bash
         run: |
+          set -o pipefail
+          {
           mkdir -p publish/linux-arm64-gnu
           cp artifacts/native-linux-arm64-gnu/*.node publish/linux-arm64-gnu/
           cd publish/linux-arm64-gnu
@@ -362,12 +447,17 @@ jobs:
           }
           EOF
           npm publish --access public
+          } 2>&1 | tee "$GITHUB_WORKSPACE/publish-logs/attention-linux-arm64-gnu.log"
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         continue-on-error: true
 
       - name: Prepare and publish @ruvector/attention-darwin-x64
+        id: pub-attention-darwin-x64
+        shell: bash
         run: |
+          set -o pipefail
+          {
           mkdir -p publish/darwin-x64
           cp artifacts/native-darwin-x64/*.node publish/darwin-x64/
           cd publish/darwin-x64
@@ -385,12 +475,17 @@ jobs:
           }
           EOF
           npm publish --access public
+          } 2>&1 | tee "$GITHUB_WORKSPACE/publish-logs/attention-darwin-x64.log"
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         continue-on-error: true
 
       - name: Prepare and publish @ruvector/attention-darwin-arm64
+        id: pub-attention-darwin-arm64
+        shell: bash
         run: |
+          set -o pipefail
+          {
           mkdir -p publish/darwin-arm64
           cp artifacts/native-darwin-arm64/*.node publish/darwin-arm64/
           cd publish/darwin-arm64
@@ -408,12 +503,17 @@ jobs:
           }
           EOF
           npm publish --access public
+          } 2>&1 | tee "$GITHUB_WORKSPACE/publish-logs/attention-darwin-arm64.log"
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         continue-on-error: true
 
       - name: Prepare and publish @ruvector/attention-win32-x64-msvc
+        id: pub-attention-win32-x64-msvc
+        shell: bash
         run: |
+          set -o pipefail
+          {
           mkdir -p publish/win32-x64-msvc
           cp artifacts/native-win32-x64-msvc/*.node publish/win32-x64-msvc/
           cd publish/win32-x64-msvc
@@ -431,13 +531,18 @@ jobs:
           }
           EOF
           npm publish --access public
+          } 2>&1 | tee "$GITHUB_WORKSPACE/publish-logs/attention-win32-x64-msvc.log"
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         continue-on-error: true
 
       # --- Publish main @ruvector/attention package ---
       - name: Publish @ruvector/attention (main package)
+        id: pub-attention
+        shell: bash
         run: |
+          set -o pipefail
+          {
           mkdir -p publish/attention-main
           cd publish/attention-main
           cat > package.json << 'EOF'
@@ -497,26 +602,50 @@ jobs:
           INDEXDTS
 
           npm publish --access public
+          } 2>&1 | tee "$GITHUB_WORKSPACE/publish-logs/attention.log"
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         continue-on-error: true
 
-      - name: Summary
+      # Every publish step above is continue-on-error so that a crate/package
+      # that is already on the registry (re-run of a partially finished
+      # release) does not abort the rest. That also used to hide every OTHER
+      # failure. This step re-reads each outcome and fails the job unless the
+      # captured log shows the registry's "already published" message.
+      - name: Fail on unexpected publish failures
+        if: ${{ !cancelled() }}
+        shell: bash
+        env:
+          OUTCOMES: |
+            math-wasm=${{ steps.pub-math-wasm.outcome }}
+            attention-wasm=${{ steps.pub-attention-wasm.outcome }}
+            attention-linux-x64-gnu=${{ steps.pub-attention-linux-x64-gnu.outcome }}
+            attention-linux-arm64-gnu=${{ steps.pub-attention-linux-arm64-gnu.outcome }}
+            attention-darwin-x64=${{ steps.pub-attention-darwin-x64.outcome }}
+            attention-darwin-arm64=${{ steps.pub-attention-darwin-arm64.outcome }}
+            attention-win32-x64-msvc=${{ steps.pub-attention-win32-x64-msvc.outcome }}
+            attention=${{ steps.pub-attention.outcome }}
         run: |
-          echo "## npm Publishing" >> $GITHUB_STEP_SUMMARY
-          echo "### WASM Packages" >> $GITHUB_STEP_SUMMARY
-          echo "✅ @ruvector/math-wasm" >> $GITHUB_STEP_SUMMARY
-          echo "✅ @ruvector/attention-wasm" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Native Packages" >> $GITHUB_STEP_SUMMARY
-          echo "✅ @ruvector/attention-linux-x64-gnu" >> $GITHUB_STEP_SUMMARY
-          echo "✅ @ruvector/attention-linux-arm64-gnu" >> $GITHUB_STEP_SUMMARY
-          echo "✅ @ruvector/attention-darwin-x64" >> $GITHUB_STEP_SUMMARY
-          echo "✅ @ruvector/attention-darwin-arm64" >> $GITHUB_STEP_SUMMARY
-          echo "✅ @ruvector/attention-win32-x64-msvc" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Main Package" >> $GITHUB_STEP_SUMMARY
-          echo "✅ @ruvector/attention" >> $GITHUB_STEP_SUMMARY
+          already_re='already (uploaded|exists)|cannot publish over|previously published|EPUBLISHCONFLICT'
+          status=0
+          echo "## npm Publishing" >> "$GITHUB_STEP_SUMMARY"
+          while IFS== read -r name outcome; do
+            [ -z "$name" ] && continue
+            log="publish-logs/${name}.log"
+            case "$outcome" in
+              success) line="✅ $name";;
+              skipped) line="⏭️ $name (skipped)";;
+              failure)
+                if [ -f "$log" ] && grep -qiE "$already_re" "$log"; then
+                  line="ℹ️ $name (already published — tolerated)"
+                else
+                  line="❌ $name (publish FAILED — see step log)"; status=1
+                fi;;
+              *) line="❓ $name (outcome: $outcome)"; status=1;;
+            esac
+            echo "$line"; echo "- $line" >> "$GITHUB_STEP_SUMMARY"
+          done <<< "$OUTCOMES"
+          exit "$status"
 
   # ============================================================================
   # Phase 6: Create GitHub Release

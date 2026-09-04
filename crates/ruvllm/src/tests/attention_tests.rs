@@ -657,6 +657,9 @@ fn test_attention_output_size_correct() {
 // ============================================================================
 
 #[test]
+// Wall-clock bound; meaningless under cargo-llvm-cov instrumentation, where
+// the short-sequence case exceeded its 1 ms average in CI (2026-09-04).
+#[cfg_attr(coverage, ignore)]
 fn test_attention_benchmark_short_sequence() {
     let head_dim = 128;
     let kv_len = 64;
@@ -686,6 +689,9 @@ fn test_attention_benchmark_short_sequence() {
 }
 
 #[test]
+// Wall-clock bound; meaningless under cargo-llvm-cov instrumentation, where
+// the short-sequence case exceeded its 1 ms average in CI (2026-09-04).
+#[cfg_attr(coverage, ignore)]
 fn test_attention_benchmark_long_sequence() {
     let head_dim = 128;
     let kv_len = 2048;
@@ -715,6 +721,9 @@ fn test_attention_benchmark_long_sequence() {
 }
 
 #[test]
+// Wall-clock bound; meaningless under cargo-llvm-cov instrumentation, where
+// the short-sequence case exceeded its 1 ms average in CI (2026-09-04).
+#[cfg_attr(coverage, ignore)]
 fn test_attention_benchmark_block_sizes() {
     let head_dim = 128;
     let kv_len = 512;

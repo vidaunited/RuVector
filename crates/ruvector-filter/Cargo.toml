@@ -17,8 +17,3 @@ dashmap = { workspace = true }
 uuid = { workspace = true }
 chrono = { workspace = true }
 ordered-float = "4.5"
-
-[features]
-# Opt-in round-trip serialisation test; see `test_serialization` in
-# src/expression.rs for why rustc cannot compile it in reasonable time.
-serde-roundtrip-test = []

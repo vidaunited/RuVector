@@ -82,17 +82,17 @@ jobs:
           [[ "$BASE_SHA" =~ ^[0-9a-f]{40}$ ]]
           [[ "$MANIFEST_PATH" =~ ^[A-Za-z0-9._/-]+$ ]]
           [[ "$MANIFEST_PATH" != /* && "$MANIFEST_PATH" != *".."* ]]
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: main
           path: trusted
           persist-credentials: false
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: ${{ inputs.base_sha }}
           path: base
           persist-credentials: false
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: ${{ inputs.candidate_sha }}
           path: candidate
@@ -178,7 +178,7 @@ jobs:
           fi
           python3 trusted/scripts/research-gate/research_gate.py validate-base-gate \
             base-gate/base-gate.json --base-sha "$BASE_SHA" --head-sha "$CANDIDATE_SHA"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: research-base-gate-${{ inputs.candidate_sha }}
           path: base-gate/
@@ -192,16 +192,16 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: main
           path: trusted
           persist-credentials: false
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: research-base-gate-${{ inputs.candidate_sha }}
           path: base-gate
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: ${{ inputs.candidate_sha }}
           path: candidate
@@ -313,7 +313,7 @@ jobs:
           python3 trusted/scripts/research-gate/research_gate.py validate-index \
             evidence/artifact-index.json --root evidence
       - name: Upload evidence for trusted attestation
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: research-evidence-${{ inputs.candidate_sha }}
           path: evidence/
@@ -329,12 +329,12 @@ jobs:
       id-token: write
       attestations: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: main
           path: trusted
           persist-credentials: false
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: research-evidence-${{ inputs.candidate_sha }}
           path: evidence
@@ -371,11 +371,11 @@ jobs:
             --required-check contained-ci-methodology-confirmation=${{ needs.candidate.result }} \
             --output evidence/attestation-subject.json
       - name: Attest exact subject with trusted GitHub identity
-        uses: actions/attest-build-provenance@v2
+        uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # v2.4.0
         with:
           subject-path: evidence/attestation-subject.json
       - name: Upload attested evidence
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: research-evidence-attested-${{ inputs.candidate_sha }}
           path: evidence/

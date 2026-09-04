@@ -45,7 +45,7 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: main
           path: trusted
@@ -137,11 +137,11 @@ jobs:
             override.json --base-sha "$BASE_SHA" --head-sha "$CANDIDATE_SHA" \
             --failed-checks failed-checks.json
       - name: Attest protected-environment authorization
-        uses: actions/attest-build-provenance@v2
+        uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # v2.4.0
         with:
           subject-path: override.json
       - name: Upload immutable override
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: research-gate-override-${{ inputs.candidate_sha }}
           path: override.json

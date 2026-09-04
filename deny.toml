@@ -38,6 +38,18 @@ yanked = "warn"
 # date — we revisit on each minor release at minimum. Dependabot will
 # auto-resolve most of these as upstreams publish fixes; this list is
 # meant to shrink over time.
+#
+# Relationship to `.cargo/audit.toml` (measured 2026-09-04 with
+# cargo-deny 0.20.2 and an emptied ignore list): `cargo deny check
+# advisories` resolves the default-feature graph for the four targets
+# above and matches exactly the IDs listed here — none of the 15 IDs
+# that appear only in audit.toml are reachable from that graph, so
+# copying them here would only add `advisory-not-detected` warnings
+# (see the RUSTSEC-2025-0134 note below for why we prune those).
+# `cargo audit` reads the whole Cargo.lock, optional features
+# included, which is why its list is longer. The two lists are
+# deliberately different; keep each equal to what its own tool
+# detects.
 ignore = [
     # ── Real vulnerabilities (need active migration path) ────────────
 

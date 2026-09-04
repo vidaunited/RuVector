@@ -95,11 +95,16 @@ jobs:
       - name: Copy to platform package
         shell: bash
         run: |
-          # Find the built .node file (exclude committed npm/ platform binaries)
-          NODE_FILE=$(find crates/ruvector-attention-node -name "*.node" -type f ! -path "*/npm/*" | head -1)
+          # `napi build --platform` writes attention.<platform>.node into the
+          # crate root. Take exactly that file: the previous `find ... | head -1`
+          # could return a host-arch binary from node_modules (@napi-rs/cli's
+          # own platform packages), which is how the darwin-x64 job shipped an
+          # arm64 binary on 2026-09-04 (build-attention run 1).
+          NODE_FILE="crates/ruvector-attention-node/attention.${{ matrix.settings.platform }}.node"
 
-          if [ -z "$NODE_FILE" ]; then
-            echo "ERROR: No .node file found"
+          if [ ! -f "$NODE_FILE" ]; then
+            echo "ERROR: expected $NODE_FILE; .node files present:"
+            find crates/ruvector-attention-node -name "*.node" -type f ! -path "*/npm/*" ! -path "*/node_modules/*"
             exit 1
           fi
 

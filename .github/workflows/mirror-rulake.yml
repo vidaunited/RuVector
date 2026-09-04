@@ -37,6 +37,10 @@ concurrency:
 jobs:
   mirror:
     name: Sync crate + ADRs to ruvnet/RuLake
+    # Only the canonical repository holds RULAKE_MIRROR_PAT and should push to
+    # the mirror; on a fork the checkout below fails with "Input required and
+    # not supplied: token" on every push to main that touches the crate.
+    if: github.repository_owner == 'ruvnet'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:

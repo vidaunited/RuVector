@@ -48,7 +48,11 @@ jobs:
           - host: ubuntu-22.04
             target: aarch64-unknown-linux-musl
             platform: linux-arm64-musl
-            extraFlags: "--zig"
+            # Not --zig: zig 0.13 rejects the --fix-cortex-a53-843419 flag rustc
+            # passes for aarch64-musl ("unsupported linker arg", 2026-09-04).
+            # build-graph-transformer.yml links this target with the GNU
+            # cross-gcc plus musl-tools instead, and that job is green.
+            extraFlags: ""
           - host: macos-14
             target: x86_64-apple-darwin
             platform: darwin-x64
@@ -90,10 +94,10 @@ jobs:
           key: tiny-dancer-${{ matrix.settings.target }}
 
       - name: Install cross-compilation tools (Linux ARM64)
-        if: matrix.settings.platform == 'linux-arm64-gnu'
+        if: matrix.settings.platform == 'linux-arm64-gnu' || matrix.settings.platform == 'linux-arm64-musl'
         run: |
           sudo apt-get update
-          sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+          sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu musl-tools
 
       - name: Install dependencies
         working-directory: npm/packages/tiny-dancer
@@ -111,6 +115,7 @@ jobs:
           npx napi build --platform --release --cargo-cwd ../../../crates/ruvector-tiny-dancer-node --target ${{ matrix.settings.target }} ${{ matrix.settings.extraFlags }}
         env:
           CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
+          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER: aarch64-linux-gnu-gcc
 
       - name: Find built .node files (debug)
         shell: bash

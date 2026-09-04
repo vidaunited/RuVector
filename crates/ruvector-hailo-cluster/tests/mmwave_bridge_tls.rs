@@ -14,6 +14,7 @@
 use std::io::Write;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::{Duration, Instant};
 
 use rcgen::{generate_simple_self_signed, CertifiedKey};
@@ -25,7 +26,20 @@ const BRIDGE: &str = env!("CARGO_BIN_EXE_ruvector-mmwave-bridge");
 
 /// Stage cert + key PEMs to a unique temp dir so parallel test cases
 /// don't fight over the same files. Returns (dir, cert_path, key_path).
+///
+/// The suffix is a process-wide counter. It used to be
+/// `Instant::now().elapsed().as_nanos()`, which is the gap between two
+/// adjacent calls (tens of nanoseconds) and so repeats across tests in
+/// the same process: `bridge_partial_mtls_config_refused` and
+/// `bridge_posts_via_tls_to_tls_fakeworker` both got
+/// `ruvector-bridge-tls-<pid>-70`, the first test's `remove_dir_all`
+/// deleted the second test's certs, and the fakeworker died with
+/// "stat server cert pem ...: No such file or directory" (PR #4 CI,
+/// 2026-09-04; the same shape as the PR #1 failure that added the
+/// stderr capture).
 fn stage_self_signed_cert() -> (PathBuf, PathBuf, PathBuf) {
+    static STAGED: AtomicUsize = AtomicUsize::new(0);
+
     let CertifiedKey { cert, key_pair } =
         generate_simple_self_signed(vec!["localhost".into(), "127.0.0.1".into()])
             .expect("rcgen self-signed");
@@ -35,7 +49,7 @@ fn stage_self_signed_cert() -> (PathBuf, PathBuf, PathBuf) {
     let dir = std::env::temp_dir().join(format!(
         "ruvector-bridge-tls-{}-{}",
         std::process::id(),
-        Instant::now().elapsed().as_nanos()
+        STAGED.fetch_add(1, Ordering::Relaxed)
     ));
     std::fs::create_dir_all(&dir).unwrap();
     let cert_path = dir.join("server.pem");

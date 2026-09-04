@@ -329,6 +329,8 @@ explicit_auto_deref = "allow"
 redundant_pattern_matching = "allow"
 
 [lints.rust]
+# cargo-llvm-cov sets cfg(coverage); declare it so check-cfg stays quiet.
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(coverage)', 'cfg(coverage_nightly)'] }
 # Allow common patterns in test code
 unused_imports = "allow"
 unused_variables = "allow"

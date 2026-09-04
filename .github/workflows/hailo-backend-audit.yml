@@ -56,7 +56,8 @@ jobs:
               --ignore RUSTSEC-2025-0141 `# bincode 1.x — workspace-wide pin via rkyv etc.` \
               --ignore RUSTSEC-2026-0115 `# imageproc 0.25 — unsound, transitive via ruvector-scipix; outside hailo scope` \
               --ignore RUSTSEC-2026-0116 `# imageproc 0.25 — unsound, transitive via ruvector-scipix; outside hailo scope` \
-              --ignore RUSTSEC-2026-0117 `# imageproc 0.25 — unsound, transitive via ruvector-scipix; outside hailo scope`
+              --ignore RUSTSEC-2026-0117 `# imageproc 0.25 — unsound, transitive via ruvector-scipix; outside hailo scope` \
+              --ignore RUSTSEC-2026-0253 `# lru 0.12.5 (ratatui 0.29 via rvagent-cli) and 0.16.4 (lattice-embed) — unsound pop(), patched only in >= 0.18.2; no parent release pulls that yet (lattice-embed 0.9 still pins ^0.16); outside hailo scope; 2026-09-04`
 
   deny:
     name: cargo-deny (license + bans + sources)

@@ -75,6 +75,23 @@ lazy_static! {
 
 /// Gather all metrics in Prometheus text format
 pub fn gather_metrics() -> String {
+    // The metric statics register themselves on first touch. Gathering before
+    // anything has been recorded (a fresh process, a scrape before the first
+    // request, a test running in its own process under nextest) therefore
+    // found an empty default registry and exposed no ruvector family at all.
+    // Touch every static first so the exposition is complete regardless of
+    // what has run.
+    lazy_static::initialize(&SEARCH_REQUESTS_TOTAL);
+    lazy_static::initialize(&SEARCH_LATENCY_SECONDS);
+    lazy_static::initialize(&INSERT_REQUESTS_TOTAL);
+    lazy_static::initialize(&INSERT_LATENCY_SECONDS);
+    lazy_static::initialize(&VECTORS_INSERTED_TOTAL);
+    lazy_static::initialize(&DELETE_REQUESTS_TOTAL);
+    lazy_static::initialize(&VECTORS_TOTAL);
+    lazy_static::initialize(&COLLECTIONS_TOTAL);
+    lazy_static::initialize(&MEMORY_USAGE_BYTES);
+    lazy_static::initialize(&UPTIME_SECONDS);
+
     let encoder = TextEncoder::new();
     let metric_families = prometheus::gather();
     let mut buffer = Vec::new();

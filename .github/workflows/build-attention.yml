@@ -234,6 +234,11 @@ jobs:
           find crates/ruvector-attention-node/npm -name "*.node" -exec ls -lh {} \;
           find crates/ruvector-attention-wasm/pkg -name "*.wasm" -exec ls -lh {} \;
 
+      - name: Verify binaries match their platform directories
+        # Refuses to commit a .node whose filename or file(1) type disagrees
+        # with the platform directory it sits in (see scripts/check-platform-binaries.sh).
+        run: bash scripts/check-platform-binaries.sh crates/ruvector-attention-node/npm
+
       - name: Commit and push binaries
         run: |
           git config user.name "github-actions[bot]"

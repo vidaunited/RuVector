@@ -186,6 +186,11 @@ jobs:
           echo "=== Main package ==="
           find npm/packages/rvf-node -name "*.node" -exec ls -lh {} \;
 
+      - name: Verify binaries match their platform directories
+        # Refuses to commit a .node whose filename or file(1) type disagrees
+        # with the platform directory it sits in (see scripts/check-platform-binaries.sh).
+        run: bash scripts/check-platform-binaries.sh crates/rvf/rvf-node/npm npm/packages/rvf-node
+
       - name: Commit and push
         run: |
           git config user.name "github-actions[bot]"

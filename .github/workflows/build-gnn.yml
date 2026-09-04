@@ -110,7 +110,7 @@ jobs:
           mkdir -p gnn-artifacts/${{ matrix.settings.platform }}
 
           # Find the built .node file
-          NODE_FILE=$(find crates/ruvector-gnn-node -name "ruvector-gnn.*.node" -type f | head -1)
+          NODE_FILE=$(find crates/ruvector-gnn-node -name "ruvector-gnn.*.node" -type f ! -path "*/npm/*" ! -path "*/node_modules/*" | head -1)
 
           if [ -z "$NODE_FILE" ]; then
             echo "ERROR: No .node file found"
@@ -162,6 +162,11 @@ jobs:
         run: |
           echo "=== Built GNN Binaries ==="
           find crates/ruvector-gnn-node/npm -name "*.node" -exec ls -lh {} \; 2>/dev/null || true
+
+      - name: Verify binaries match their platform directories
+        # Refuses to commit a .node whose filename or file(1) type disagrees
+        # with the platform directory it sits in (see scripts/check-platform-binaries.sh).
+        run: bash scripts/check-platform-binaries.sh crates/ruvector-gnn-node/npm
 
       - name: Commit and push binaries
         run: |

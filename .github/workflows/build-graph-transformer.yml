@@ -120,7 +120,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p gt-artifacts/${{ matrix.settings.platform }}
-          NODE_FILE=$(find crates/ruvector-graph-transformer-node -name "ruvector-graph-transformer.*.node" -type f | head -1)
+          NODE_FILE=$(find crates/ruvector-graph-transformer-node -name "ruvector-graph-transformer.*.node" -type f ! -path "*/npm/*" ! -path "*/node_modules/*" | head -1)
           if [ -z "$NODE_FILE" ]; then
             echo "ERROR: No .node file found"
             find crates/ruvector-graph-transformer-node -name "*.node" -type f
@@ -209,6 +209,11 @@ jobs:
           echo "=== Built Binaries ==="
           find crates/ruvector-graph-transformer-node/npm -name "*.node" -exec ls -lh {} \; 2>/dev/null || true
           find crates/ruvector-graph-transformer-wasm/pkg -name "*.wasm" -exec ls -lh {} \; 2>/dev/null || true
+
+      - name: Verify binaries match their platform directories
+        # Refuses to commit a .node whose filename or file(1) type disagrees
+        # with the platform directory it sits in (see scripts/check-platform-binaries.sh).
+        run: bash scripts/check-platform-binaries.sh crates/ruvector-graph-transformer-node/npm
 
       - name: Commit and push binaries
         run: |

@@ -214,6 +214,11 @@ jobs:
           find npm/core/platforms -name "*.node" -exec ls -lh {} \;
           find npm/core/native -name "*.node" -exec ls -lh {} \; 2>/dev/null || true
 
+      - name: Verify binaries match their platform directories
+        # Refuses to commit a .node whose filename or file(1) type disagrees
+        # with the platform directory it sits in (see scripts/check-platform-binaries.sh).
+        run: bash scripts/check-platform-binaries.sh npm/core/platforms npm/core/native
+
       - name: Commit and push binaries
         run: |
           git config user.name "github-actions[bot]"

@@ -219,6 +219,15 @@ jobs:
     name: Security Audit
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    # rustsec/audit-check publishes its result as a check run whenever the
+    # audit has ANY finding (a yanked-crate warning is enough), and the
+    # workflow-level `permissions:` above grants no `checks: write`, so on a
+    # same-repo push the action died with "Resource not accessible by
+    # integration" before it could report. Job-level permissions replace
+    # the workflow set, hence `contents: read` is restated for checkout.
+    permissions:
+      contents: read
+      checks: write
 
     steps:
       - name: Checkout code

@@ -4,6 +4,10 @@
   "description": "Advanced features for ruvector: embeddings, UI, exports, temporal tracking, and persistence",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "type": "module",
   "scripts": {
     "build": "tsc",

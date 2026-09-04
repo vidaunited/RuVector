@@ -54,6 +54,7 @@ jobs:
   prepare:
     name: Prepare Model List
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
       quantizations: ${{ steps.set-matrix.outputs.quantizations }}
@@ -90,6 +91,7 @@ jobs:
   optimize:
     name: Optimize ${{ matrix.model }}
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     needs: prepare
     strategy:
       fail-fast: false
@@ -178,6 +180,7 @@ jobs:
   upload-gcs:
     name: Upload to GCS
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     needs: [prepare, optimize]
     if: github.event.inputs.upload_gcs != 'false'
     steps:
@@ -219,6 +222,7 @@ jobs:
   upload-ipfs:
     name: Upload to IPFS
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     needs: [prepare, optimize]
     if: github.event.inputs.upload_ipfs == 'true'
     steps:
@@ -278,6 +282,7 @@ jobs:
   update-registry:
     name: Update Registry
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     needs: [prepare, optimize, upload-gcs]
     if: always() && needs.optimize.result == 'success'
     steps:
@@ -374,6 +379,7 @@ jobs:
   benchmark:
     name: Benchmark Models
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     needs: [prepare, optimize]
     if: github.event_name == 'release'
     steps:

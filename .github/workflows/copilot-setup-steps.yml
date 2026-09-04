@@ -6,6 +6,7 @@ on:
 jobs:
   copilot-setup:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     environment: copilot
     steps:
       - name: Cleanup before git clone

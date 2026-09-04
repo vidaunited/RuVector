@@ -36,6 +36,7 @@ jobs:
   unit-tests:
     name: Unit Tests (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
@@ -94,6 +95,7 @@ jobs:
   e2e-tests:
     name: E2E Tests (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
@@ -137,6 +139,7 @@ jobs:
   apple-silicon-tests:
     name: Apple Silicon Tests
     runs-on: macos-14  # M1/M2 runners
+    timeout-minutes: 60
     steps:
       - name: Checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
@@ -180,6 +183,7 @@ jobs:
   quantization-tests:
     name: Quantization Accuracy
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - name: Checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
@@ -218,6 +222,7 @@ jobs:
   thread-safety-tests:
     name: Thread Safety
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     steps:
       - name: Checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
@@ -246,6 +251,7 @@ jobs:
   benchmarks:
     name: Performance Benchmarks
     runs-on: macos-14
+    timeout-minutes: 60
     if: github.event_name == 'workflow_dispatch' && github.event.inputs.run_benchmarks == 'true'
     steps:
       - name: Checkout
@@ -276,6 +282,7 @@ jobs:
   stress-tests:
     name: Stress Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     if: github.event_name == 'workflow_dispatch' && github.event.inputs.run_stress_tests == 'true'
     steps:
       - name: Checkout
@@ -301,6 +308,7 @@ jobs:
   code-quality:
     name: Code Quality
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - name: Checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
@@ -335,6 +343,7 @@ jobs:
   coverage:
     name: Test Coverage
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - name: Checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
@@ -381,6 +390,7 @@ jobs:
   test-summary:
     name: Test Summary
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     needs: [unit-tests, e2e-tests, quantization-tests, thread-safety-tests, code-quality]
     if: always()
     steps:

@@ -22,6 +22,7 @@ jobs:
   rust-cli-tests:
     name: Rust CLI Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
 
@@ -65,6 +66,7 @@ jobs:
   npm-cli-tests:
     name: npm CLI Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
 
@@ -110,6 +112,7 @@ jobs:
   postgres-schema-validation:
     name: PostgreSQL Schema Validation
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     services:
       postgres:
         image: postgres:15
@@ -178,6 +181,7 @@ jobs:
   feature-parity-check:
     name: Feature Parity Check
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     needs: [rust-cli-tests, npm-cli-tests]
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262

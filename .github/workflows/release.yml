@@ -30,6 +30,7 @@ jobs:
   validate:
     name: Validate Code Quality
     runs-on: ubuntu-22.04
+    timeout-minutes: 30
     if: ${{ !inputs.skip_tests }}
 
     steps:
@@ -88,6 +89,7 @@ jobs:
   build-crates:
     name: Build Rust Crates
     runs-on: ubuntu-22.04
+    timeout-minutes: 30
     needs: validate
     if: always() && (needs.validate.result == 'success' || needs.validate.result == 'skipped')
 
@@ -125,6 +127,7 @@ jobs:
   build-wasm:
     name: Build WASM Packages
     runs-on: ubuntu-22.04
+    timeout-minutes: 30
     needs: validate
     if: always() && (needs.validate.result == 'success' || needs.validate.result == 'skipped')
 
@@ -215,6 +218,7 @@ jobs:
   publish-crates:
     name: Publish Rust Crates
     runs-on: ubuntu-22.04
+    timeout-minutes: 60
     needs: [validate, build-crates]
     if: |
       always() &&
@@ -323,6 +327,7 @@ jobs:
   prepare-npm:
     name: Prepare npm Packages
     runs-on: ubuntu-22.04
+    timeout-minutes: 60
     needs: [validate, build-native, build-wasm]
     if: |
       always() &&
@@ -436,6 +441,7 @@ jobs:
   create-release:
     name: Create GitHub Release
     runs-on: ubuntu-22.04
+    timeout-minutes: 60
     needs: [build-crates, build-native, build-wasm, publish-crates, prepare-npm]
     if: |
       always() &&
@@ -590,6 +596,7 @@ jobs:
   release-summary:
     name: Release Summary
     runs-on: ubuntu-22.04
+    timeout-minutes: 60
     needs: [validate, build-crates, build-native, build-wasm, publish-crates, prepare-npm, create-release]
     if: always()
 

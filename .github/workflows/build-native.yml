@@ -54,6 +54,7 @@ jobs:
 
     name: Build ${{ matrix.settings.platform }}
     runs-on: ${{ matrix.settings.host }}
+    timeout-minutes: 30
 
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
@@ -177,6 +178,7 @@ jobs:
   commit-binaries:
     name: Commit Built Binaries
     runs-on: ubuntu-22.04
+    timeout-minutes: 30
     needs: build
     if: |
       !inputs.skip_commit &&

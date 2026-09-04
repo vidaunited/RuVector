@@ -247,6 +247,7 @@ jobs:
   benchmark-comparison:
     name: Compare with Baseline
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     needs: rust-benchmarks
     if: github.event_name == 'pull_request'
 

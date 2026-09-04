@@ -63,10 +63,22 @@ pub enum FilterExpression {
         bottom_right: (f64, f64),
     },
 
-    // Logical operators
-    And(Vec<FilterExpression>),
-    Or(Vec<FilterExpression>),
-    Not(Box<FilterExpression>),
+    // Logical operators. These are struct variants on purpose: under
+    // `#[serde(tag = "type")]` a *newtype* variant holding `Self` serialises
+    // through a wrapping `TaggedSerializer`, so proving `Self: Serialize`
+    // recurses into a strictly deeper serializer type at every level and never
+    // closes (E0275 at the default recursion limit; a spin past 240 min with
+    // the 4096 limit this crate used to carry). Struct variants insert the tag
+    // directly and do not nest. See `tests::test_serialization_nested`.
+    And {
+        filters: Vec<FilterExpression>,
+    },
+    Or {
+        filters: Vec<FilterExpression>,
+    },
+    Not {
+        filter: Box<FilterExpression>,
+    },
 
     // Existence check
     Exists {
@@ -176,19 +188,21 @@ impl FilterExpression {
 
     /// Create an AND filter
     pub fn and(filters: Vec<FilterExpression>) -> Self {
-        Self::And(filters)
+        Self::And { filters }
     }
 
     /// Create an OR filter
     pub fn or(filters: Vec<FilterExpression>) -> Self {
-        Self::Or(filters)
+        Self::Or { filters }
     }
 
     /// Create a NOT filter
     // Public API constructor mirrors `and`/`or`; not the `std::ops::Not` trait.
     #[allow(clippy::should_implement_trait)]
     pub fn not(filter: FilterExpression) -> Self {
-        Self::Not(Box::new(filter))
+        Self::Not {
+            filter: Box::new(filter),
+        }
     }
 
     /// Create an EXISTS filter
@@ -231,13 +245,13 @@ impl FilterExpression {
             | Self::IsNull { field } => {
                 fields.push(field.clone());
             }
-            Self::And(exprs) | Self::Or(exprs) => {
-                for expr in exprs {
+            Self::And { filters } | Self::Or { filters } => {
+                for expr in filters {
                     expr.collect_fields(fields);
                 }
             }
-            Self::Not(expr) => {
-                expr.collect_fields(fields);
+            Self::Not { filter } => {
+                filter.collect_fields(fields);
             }
         }
     }
@@ -257,7 +271,7 @@ mod tests {
             FilterExpression::eq("status", json!("active")),
             FilterExpression::gte("age", json!(18)),
         ]);
-        assert!(matches!(filter, FilterExpression::And(_)));
+        assert!(matches!(filter, FilterExpression::And { .. }));
     }
 
     #[test]
@@ -274,30 +288,32 @@ mod tests {
         assert_eq!(fields, vec!["age", "score", "status"]);
     }
 
-    /// The internally-tagged JSON form deserialises. Only the deserialising
-    /// half runs by default: instantiating `serde_json::to_string` for this
-    /// enum makes rustc spin at 100% CPU on one thread and never finish
-    /// (240 min to CI's cap on 2026-09-04; reproduced locally past 30 min on
-    /// rustc 1.94.1 and 1.98.1, dev and release, incremental on and off).
-    /// Bisected to this crate, this module, this test, and then to the
-    /// `to_string` call — `from_str` alone compiles in about a second. The
-    /// round trip lives in `test_serialization_roundtrip` behind the
-    /// `serde-roundtrip-test` feature until the compiler-side cause is fixed.
     #[test]
     fn test_serialization() {
-        let json = r#"{"type":"eq","field":"status","value":"active"}"#;
-        let deserialized: FilterExpression = serde_json::from_str(json).unwrap();
+        let filter = FilterExpression::eq("status", json!("active"));
+        let json = serde_json::to_string(&filter).unwrap();
+        assert_eq!(json, r#"{"type":"eq","field":"status","value":"active"}"#);
+        let deserialized: FilterExpression = serde_json::from_str(&json).unwrap();
         assert!(matches!(deserialized, FilterExpression::Eq { .. }));
     }
 
-    /// Opt in with `--features serde-roundtrip-test`; see `test_serialization`
-    /// for why this is not on by default.
-    #[cfg(feature = "serde-roundtrip-test")]
+    /// The logical operators round-trip too, which the previous newtype
+    /// shape could not do: serde documents that an internally tagged newtype
+    /// variant holding a sequence cannot be serialised at all, and merely
+    /// instantiating `to_string` for it made rustc spin (see the enum docs).
     #[test]
-    fn test_serialization_roundtrip() {
-        let filter = FilterExpression::eq("status", json!("active"));
-        let json = serde_json::to_string(&filter).unwrap();
-        let deserialized: FilterExpression = serde_json::from_str(&json).unwrap();
-        assert!(matches!(deserialized, FilterExpression::Eq { .. }));
+    fn test_serialization_nested() {
+        let eq = FilterExpression::eq("status", json!("active"));
+        let not = FilterExpression::not(eq.clone());
+        let and = FilterExpression::and(vec![eq, not]);
+
+        let json = serde_json::to_string(&and).unwrap();
+        assert_eq!(
+            json,
+            r#"{"type":"and","filters":[{"type":"eq","field":"status","value":"active"},{"type":"not","filter":{"type":"eq","field":"status","value":"active"}}]}"#
+        );
+        let back: FilterExpression = serde_json::from_str(&json).unwrap();
+        assert!(matches!(&back, FilterExpression::And { filters } if filters.len() == 2));
+        assert_eq!(serde_json::to_string(&back).unwrap(), json);
     }
 }

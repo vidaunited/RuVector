@@ -45,7 +45,16 @@ fn pooled_search_does_not_allocate_visited_set_storage() {
     const N: usize = 250_000;
     const DIM: usize = 8;
     const SEARCHES: usize = 100;
-    const MAX_HOT_SEARCH_ALLOCATED_BYTES: usize = 300_000;
+    // Upper bound on everything the hot searches allocate: the two search
+    // heaps, the re-rank buffer, and the k result strings. The graph is built
+    // from `thread_rng`, so the traversal, and with it how far the heaps grow,
+    // differs from run to run: measured 232,700 to 284,100 bytes over five
+    // local runs and 386,400 on a CI run, all for the same code, against a
+    // previous cap of 300,000 that sat inside that spread. The regression this
+    // guards (a fresh VisitedSet per search) costs N * 8 bytes per search, i.e.
+    // 200,000,000 here, two hundred times this bound, so the bound stays a
+    // coarse sanity check rather than a tuned figure.
+    const MAX_HOT_SEARCH_ALLOCATED_BYTES: usize = 1_000_000;
 
     let mut rng = StdRng::seed_from_u64(0x677A_110C);
     let mut index = DiskAnnIndex::new(DiskAnnConfig {

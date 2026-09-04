@@ -274,8 +274,27 @@ mod tests {
         assert_eq!(fields, vec!["age", "score", "status"]);
     }
 
+    /// The internally-tagged JSON form deserialises. Only the deserialising
+    /// half runs by default: instantiating `serde_json::to_string` for this
+    /// enum makes rustc spin at 100% CPU on one thread and never finish
+    /// (240 min to CI's cap on 2026-09-04; reproduced locally past 30 min on
+    /// rustc 1.94.1 and 1.98.1, dev and release, incremental on and off).
+    /// Bisected to this crate, this module, this test, and then to the
+    /// `to_string` call — `from_str` alone compiles in about a second. The
+    /// round trip lives in `test_serialization_roundtrip` behind the
+    /// `serde-roundtrip-test` feature until the compiler-side cause is fixed.
     #[test]
     fn test_serialization() {
+        let json = r#"{"type":"eq","field":"status","value":"active"}"#;
+        let deserialized: FilterExpression = serde_json::from_str(json).unwrap();
+        assert!(matches!(deserialized, FilterExpression::Eq { .. }));
+    }
+
+    /// Opt in with `--features serde-roundtrip-test`; see `test_serialization`
+    /// for why this is not on by default.
+    #[cfg(feature = "serde-roundtrip-test")]
+    #[test]
+    fn test_serialization_roundtrip() {
         let filter = FilterExpression::eq("status", json!("active"));
         let json = serde_json::to_string(&filter).unwrap();
         let deserialized: FilterExpression = serde_json::from_str(&json).unwrap();

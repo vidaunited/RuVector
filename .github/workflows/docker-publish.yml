@@ -40,6 +40,7 @@ jobs:
   build-and-push:
     name: Build & Push PG${{ matrix.pg_version }}
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     permissions:
       contents: read
       packages: write
@@ -147,6 +148,7 @@ jobs:
   update-description:
     name: Update Docker Hub Description
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     needs: build-and-push
 
     steps:
@@ -168,6 +170,7 @@ jobs:
   summary:
     name: Publication Summary
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     needs: [build-and-push, update-description]
     if: always()
 

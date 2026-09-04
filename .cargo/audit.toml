@@ -3,6 +3,20 @@
 # Ignored advisories MUST have a justification. Anything fixable should be
 # fixed via a dependency bump rather than ignored here. Re-evaluate the
 # `until` dates periodically.
+#
+# This list is longer than the one in deny.toml on purpose: cargo-audit
+# scans the whole Cargo.lock (optional features included) while
+# cargo-deny resolves only the default-feature graph for the targets in
+# deny.toml, and every ID below that is absent from deny.toml is one
+# cargo-deny never encounters (measured 2026-09-04, cargo-deny 0.20.2).
+# Measured against the workspace Cargo.lock the same day (cargo-audit
+# 0.22, unfiltered): 17 of the 25 IDs below match; the 8 that do not are
+# RUSTSEC-2021-0127, RUSTSEC-2022-0054, RUSTSEC-2024-0388,
+# RUSTSEC-2024-0408, RUSTSEC-2026-0097, RUSTSEC-2026-0115,
+# RUSTSEC-2026-0116 and RUSTSEC-2026-0117 (RUSTSEC-2026-0097 does
+# match the fuzz/ and examples/ lockfiles, which this file does not
+# govern). cargo-audit does not warn about unused ignores, so these
+# are candidates for removal, not errors.
 
 [advisories]
 ignore = [
@@ -72,12 +86,20 @@ ignore = [
     # Soundness/unsoundness notices in deps we do not directly control
     # ------------------------------------------------------------------
 
-    # lru — IterMut Stacked Borrows violation. Used transitively; we do
-    # not call IterMut from the affected crate. Track parent dep upgrade.
+    # NOTE: the package names on these two entries were previously swapped
+    # (corrected 2026-09-04 against the advisory-db `package` field; the IDs
+    # themselves were always right, only the prose was crossed).
+
+    # pprof < 0.14 — unsound `slice::from_raw_parts` usage (RUSTSEC-2024-0408).
+    # Only loaded behind benchmark/profiling features, never in production
+    # binaries. Not present in the workspace Cargo.lock as of 2026-09-04.
     "RUSTSEC-2024-0408",
 
-    # pprof — unsound `slice::from_raw_parts` usage. Only loaded behind
-    # benchmark/profiling features, never in production binaries.
+    # lru 0.9 – 0.16.2 — IterMut Stacked Borrows violation (RUSTSEC-2026-0002).
+    # Used transitively (lru 0.12.5); we do not call IterMut from the affected
+    # crate. Track parent dep upgrade. Note RUSTSEC-2026-0253 (lru < 0.18.2,
+    # unsound, 2026-05-12) also matches 0.12.5 and 0.16.4 and is not ignored
+    # here — it surfaces as a cargo-audit warning, which does not fail CI.
     "RUSTSEC-2026-0002",
 
     # rand — unsoundness when using a custom global logger with rand::rng().

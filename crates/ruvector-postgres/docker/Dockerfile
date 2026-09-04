@@ -4,7 +4,12 @@
 # v0.3.1: Fixes — Cypher self-reference, graph/RDF persistence, SONA dimension panic
 
 ARG PG_VERSION=17
-ARG RUST_VERSION=1.86
+# 1.88 is the minimum the dependency tree accepts: icu_* 2.3 (resolved here
+# because this stage copies no Cargo.lock) and, in the crate's own lockfile,
+# time 0.3.54 / image 0.25.10 / cookie_store 0.22.1 / ort 2.0.0-rc.12 all
+# declare rust-version 1.88. Keep the exact pin; bump it when a dependency
+# raises its MSRV again ("rustc X is not supported by the following packages").
+ARG RUST_VERSION=1.88
 
 # ============================================================================
 # Stage 1: Base Builder with Rust and PostgreSQL dev dependencies

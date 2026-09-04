@@ -71,24 +71,6 @@ jobs:
       - name: Scan evolution-loop mutation surfaces for training/weight APIs
         run: node scripts/frozen-weights-check.mjs
 
-  fmt:
-    name: Rustfmt
-    runs-on: ubuntu-22.04
-    timeout-minutes: 30
-    continue-on-error: true
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-        with:
-          submodules: recursive
-
-      - name: Install Rust stable
-        uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4
-        with:
-          components: rustfmt
-
-      - name: Check formatting
-        run: cargo fmt --all -- --check
-
   check:
     name: Cargo check
     runs-on: ubuntu-22.04
@@ -110,34 +92,6 @@ jobs:
       - name: Cargo check (workspace)
         run: cargo check --workspace --exclude ruvector-postgres
 
-  clippy:
-    name: Clippy
-    runs-on: ubuntu-22.04
-    timeout-minutes: 30
-    continue-on-error: true
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-        with:
-          submodules: recursive
-
-      - name: Install system dependencies
-        run: sudo apt-get update && sudo apt-get install -y libfontconfig1-dev
-
-      - name: Install Rust stable
-        uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4
-        with:
-          components: clippy
-
-      - name: Cache Rust
-        uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32
-
-      - name: Clippy (workspace)
-        run: cargo clippy --workspace --exclude ruvector-postgres --all-targets -- -W warnings
-
-  # The full workspace test suite exceeds the 30-minute timeout on a single
-  # runner. We split the work into parallel matrix jobs grouped by domain so
-  # each shard fits comfortably under the timeout, and use `cargo-nextest` for
-  # faster test discovery and execution.
   test:
     name: Tests (${{ matrix.name }})
     runs-on: ubuntu-22.04

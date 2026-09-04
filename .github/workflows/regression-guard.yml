@@ -19,6 +19,7 @@ jobs:
   # in the same expression deadlocks. Forbid the exact textual pattern.
   reentrant-rwlock-double-write:
     runs-on: ubuntu-22.04
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
       - name: Forbid reentrant parking_lot lock acquisition in a single statement
@@ -46,6 +47,7 @@ jobs:
   # case-insensitive. Fail CI if any two paths in the tree differ only by case.
   case-insensitive-collisions:
     runs-on: ubuntu-22.04
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
       - name: Detect case-only filename collisions
@@ -62,6 +64,7 @@ jobs:
   # stable Rust 1.77+ without the simd-avx512 feature.
   ruvector-core-no-avx512-builds-on-stable:
     runs-on: ubuntu-22.04
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
       - uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4
@@ -79,6 +82,7 @@ jobs:
   # historically exposed the result-heap inversion.
   hnsw-recall-at-1:
     runs-on: ubuntu-22.04
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
       - uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4
@@ -103,6 +107,7 @@ jobs:
   # forbids the regression.
   hnsw-insert-beam-no-m2-clamp:
     runs-on: ubuntu-22.04
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
       - name: Forbid ef_construction.min(m * 2) clamp in HNSW insert beam
@@ -122,6 +127,7 @@ jobs:
   # test below.
   hnsw-distance-based-neighbor-pruning:
     runs-on: ubuntu-22.04
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
       - name: Require calculate_distance() inside HNSW overflow gate
@@ -145,6 +151,7 @@ jobs:
   # was created on every open, so search returned 0 results after restart.
   vector-db-rebuilds-index-on-open:
     runs-on: ubuntu-22.04
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
       - name: Require storage.get_all_ids() rebuild path in VectorDB::new
@@ -160,6 +167,7 @@ jobs:
   # inside the resulting tarball.
   npm-publish-pipeline:
     runs-on: ubuntu-22.04
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
@@ -224,6 +232,7 @@ jobs:
   # tracked separately — this guard locks the #463 regression shut.
   no-npx-execSync-in-route-enhanced:
     runs-on: ubuntu-22.04
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
       - name: Forbid execSync('npx ruvector …') inside hooks_route_enhanced case
@@ -250,6 +259,7 @@ jobs:
   # `${args.…}` and don't wrap it in sanitizeShellArg(...).
   shell-injection-in-mcp-server:
     runs-on: ubuntu-22.04
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
       - name: Forbid unsanitized ${args.X} in exec*/spawn* calls
@@ -266,6 +276,7 @@ jobs:
   # they panic at runtime.
   no-systemtime-in-wasm-crates:
     runs-on: ubuntu-22.04
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
       - name: Reject SystemTime/Instant in wasm32-targeted crates
@@ -300,6 +311,7 @@ jobs:
   # JS example/test files are excluded — they're illustrative.
   no-hardcoded-workspaces-paths:
     runs-on: ubuntu-22.04
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
       - name: Forbid hardcoded devcontainer path in checked-in config
@@ -325,6 +337,7 @@ jobs:
   # we need it most. Assert all four "Hydrate <collection>:" log lines stay.
   brain-hydration-counters-present:
     runs-on: ubuntu-22.04
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
       - name: Assert hydration counter log lines exist
@@ -350,6 +363,7 @@ jobs:
   # network errors so transient registry hiccups don't false-fail.
   optional-deps-resolvable-on-npm:
     runs-on: ubuntu-22.04
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
@@ -398,6 +412,7 @@ jobs:
   # integration tests, or benches, so they can silently rot. Run them explicitly.
   graph-condense-perception-tests:
     runs-on: ubuntu-22.04
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
       - uses: dtolnay/rust-toolchain@4cda84d5c5c54efe2404f9d843567869ab1699d4
@@ -417,6 +432,7 @@ jobs:
   # fails to compile for crates.io consumers. Forbid regressing the pin to 2.0.x.
   mincut-pin-tracks-workspace-version:
     runs-on: ubuntu-22.04
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
       - name: ruvector-mincut pin must not regress to 2.0.x

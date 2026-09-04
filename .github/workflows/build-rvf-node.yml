@@ -42,6 +42,7 @@ jobs:
 
     name: Build ${{ matrix.settings.platform }}
     runs-on: ${{ matrix.settings.host }}
+    timeout-minutes: 30
 
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
@@ -154,6 +155,7 @@ jobs:
   commit-binaries:
     name: Commit RVF Node Binaries
     runs-on: ubuntu-22.04
+    timeout-minutes: 30
     needs: build
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     permissions:
@@ -185,6 +187,11 @@ jobs:
           find crates/rvf/rvf-node/npm -name "*.node" -exec ls -lh {} \;
           echo "=== Main package ==="
           find npm/packages/rvf-node -name "*.node" -exec ls -lh {} \;
+
+      - name: Verify binaries match their platform directories
+        # Refuses to commit a .node whose filename or file(1) type disagrees
+        # with the platform directory it sits in (see scripts/check-platform-binaries.sh).
+        run: bash scripts/check-platform-binaries.sh crates/rvf/rvf-node/npm npm/packages/rvf-node
 
       - name: Commit and push
         run: |

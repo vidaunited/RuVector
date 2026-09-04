@@ -68,24 +68,67 @@ fn spawn_tls_fakeworker(
         .env("RUVECTOR_TLS_KEY", key_path)
         .env("RUST_LOG", "warn")
         .stdout(Stdio::null())
-        .stderr(Stdio::null());
+        // Piped, not null: when the worker dies before it binds, the only
+        // diagnostic is the `Error: ...` line its `main` prints, and a
+        // panic that quotes the exit status alone cannot say whether the
+        // PEM was rejected, the port was taken, or the TLS acceptor failed.
+        .stderr(Stdio::piped());
     if !fingerprint.is_empty() {
         cmd.env("RUVECTOR_FAKE_FINGERPRINT", fingerprint);
     }
     let mut child = cmd.spawn().expect("spawn tls fakeworker");
+    // Drain stderr on a helper thread so a chatty worker can never block
+    // on a full pipe; the buffer is only read back on the failure paths.
+    let stderr_buf = std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
+    if let Some(mut pipe) = child.stderr.take() {
+        let buf = std::sync::Arc::clone(&stderr_buf);
+        std::thread::spawn(move || {
+            let mut out = Vec::new();
+            let _ = std::io::Read::read_to_end(&mut pipe, &mut out);
+            if let Ok(mut b) = buf.lock() {
+                *b = out;
+            }
+        });
+    }
+    let worker_stderr = move || -> String {
+        // Give the drain thread a moment to observe EOF after the exit.
+        std::thread::sleep(Duration::from_millis(100));
+        stderr_buf
+            .lock()
+            .map(|b| String::from_utf8_lossy(&b).into_owned())
+            .unwrap_or_default()
+    };
     // Poll TCP connect; TLS handshake will fail without a client cert
     // but the socket itself is bound.
     let bind_addr: std::net::SocketAddr = bind.parse().unwrap();
     let start = Instant::now();
-    while start.elapsed() < Duration::from_secs(2) {
+    // 10 s rather than 2 s: before it can bind, the fakeworker has to parse
+    // the PEMs and build its TLS acceptor, and a loaded CI runner has lost
+    // that race (the two plaintext siblings in common.rs never do this
+    // work). Polling still returns as soon as the socket accepts, so the
+    // happy path costs nothing extra; a worker that dies is reported with
+    // its exit status instead of waiting out the budget.
+    while start.elapsed() < Duration::from_secs(10) {
         if std::net::TcpStream::connect_timeout(&bind_addr, Duration::from_millis(50)).is_ok() {
             return child;
+        }
+        if let Ok(Some(status)) = child.try_wait() {
+            panic!(
+                "tls fakeworker on {} exited before accepting connections: {}\n--- fakeworker stderr ---\n{}",
+                bind,
+                status,
+                worker_stderr()
+            );
         }
         std::thread::sleep(Duration::from_millis(30));
     }
     let _ = child.kill();
     let _ = child.wait();
-    panic!("tls fakeworker on {} never accepted connections", bind);
+    panic!(
+        "tls fakeworker on {} never accepted connections\n--- fakeworker stderr ---\n{}",
+        bind,
+        worker_stderr()
+    );
 }
 
 #[test]

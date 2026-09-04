@@ -57,6 +57,7 @@ jobs:
 
     name: Build ${{ matrix.settings.platform }}
     runs-on: ${{ matrix.settings.host }}
+    timeout-minutes: 30
 
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
@@ -120,7 +121,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p gt-artifacts/${{ matrix.settings.platform }}
-          NODE_FILE=$(find crates/ruvector-graph-transformer-node -name "ruvector-graph-transformer.*.node" -type f | head -1)
+          NODE_FILE=$(find crates/ruvector-graph-transformer-node -name "ruvector-graph-transformer.*.node" -type f ! -path "*/npm/*" ! -path "*/node_modules/*" | head -1)
           if [ -z "$NODE_FILE" ]; then
             echo "ERROR: No .node file found"
             find crates/ruvector-graph-transformer-node -name "*.node" -type f
@@ -139,6 +140,7 @@ jobs:
   build-wasm:
     name: Build WASM
     runs-on: ubuntu-22.04
+    timeout-minutes: 30
 
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
@@ -172,6 +174,7 @@ jobs:
   commit-binaries:
     name: Commit Built Binaries
     runs-on: ubuntu-22.04
+    timeout-minutes: 30
     needs: [build, build-wasm]
     if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
     permissions:
@@ -210,6 +213,11 @@ jobs:
           find crates/ruvector-graph-transformer-node/npm -name "*.node" -exec ls -lh {} \; 2>/dev/null || true
           find crates/ruvector-graph-transformer-wasm/pkg -name "*.wasm" -exec ls -lh {} \; 2>/dev/null || true
 
+      - name: Verify binaries match their platform directories
+        # Refuses to commit a .node whose filename or file(1) type disagrees
+        # with the platform directory it sits in (see scripts/check-platform-binaries.sh).
+        run: bash scripts/check-platform-binaries.sh crates/ruvector-graph-transformer-node/npm
+
       - name: Commit and push binaries
         run: |
           git config user.name "github-actions[bot]"
@@ -239,6 +247,7 @@ jobs:
   publish:
     name: Publish Platform Packages
     runs-on: ubuntu-22.04
+    timeout-minutes: 60
     needs: [build, commit-binaries]
     if: |
       inputs.publish == true ||

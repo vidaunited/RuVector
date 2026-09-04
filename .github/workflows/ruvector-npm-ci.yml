@@ -30,6 +30,7 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-22.04
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
 
@@ -89,6 +90,7 @@ jobs:
   unit-tests:
     name: Unit & CLI tests
     runs-on: ubuntu-22.04
+    timeout-minutes: 60
     needs: build
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
@@ -137,6 +139,7 @@ jobs:
   functional-smoke:
     name: Functional smoke (npx ruvector)
     runs-on: ubuntu-22.04
+    timeout-minutes: 30
     needs: build
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
@@ -237,6 +240,7 @@ jobs:
   learning-check:
     name: Learning check (HNSW activates)
     runs-on: ubuntu-22.04
+    timeout-minutes: 30
     needs: build
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
@@ -355,6 +359,7 @@ jobs:
   perf-benchmark:
     name: Performance benchmark (≥2× speedup at N=5000)
     runs-on: ubuntu-22.04
+    timeout-minutes: 60
     needs: build
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
@@ -466,6 +471,7 @@ jobs:
   recall-quality:
     name: Recall quality (recall@10 ≥ 0.88 at N=10k)
     runs-on: ubuntu-22.04
+    timeout-minutes: 30
     needs: build
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
@@ -586,6 +592,7 @@ jobs:
   tarball-integrity:
     name: Tarball integrity
     runs-on: ubuntu-22.04
+    timeout-minutes: 30
     needs: build
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
@@ -667,6 +674,7 @@ jobs:
   ci-pass:
     name: CI pass
     runs-on: ubuntu-22.04
+    timeout-minutes: 30
     needs:
       - build
       - unit-tests

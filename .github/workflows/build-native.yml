@@ -54,6 +54,7 @@ jobs:
 
     name: Build ${{ matrix.settings.platform }}
     runs-on: ${{ matrix.settings.host }}
+    timeout-minutes: 30
 
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
@@ -177,6 +178,7 @@ jobs:
   commit-binaries:
     name: Commit Built Binaries
     runs-on: ubuntu-22.04
+    timeout-minutes: 30
     needs: build
     if: |
       !inputs.skip_commit &&
@@ -213,6 +215,11 @@ jobs:
           echo "=== Built Binaries ==="
           find npm/core/platforms -name "*.node" -exec ls -lh {} \;
           find npm/core/native -name "*.node" -exec ls -lh {} \; 2>/dev/null || true
+
+      - name: Verify binaries match their platform directories
+        # Refuses to commit a .node whose filename or file(1) type disagrees
+        # with the platform directory it sits in (see scripts/check-platform-binaries.sh).
+        run: bash scripts/check-platform-binaries.sh npm/core/platforms npm/core/native
 
       - name: Commit and push binaries
         run: |

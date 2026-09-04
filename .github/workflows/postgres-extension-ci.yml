@@ -30,6 +30,7 @@ jobs:
   test:
     name: Test PostgreSQL ${{ matrix.pg_version }} on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
 
     strategy:
       fail-fast: false
@@ -129,6 +130,7 @@ jobs:
   test-all-features:
     name: Test All Features (PostgreSQL 17)
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
       - name: Checkout code
@@ -216,6 +218,16 @@ jobs:
   security:
     name: Security Audit
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # rustsec/audit-check publishes its result as a check run whenever the
+    # audit has ANY finding (a yanked-crate warning is enough), and the
+    # workflow-level `permissions:` above grants no `checks: write`, so on a
+    # same-repo push the action died with "Resource not accessible by
+    # integration" before it could report. Job-level permissions replace
+    # the workflow set, hence `contents: read` is restated for checkout.
+    permissions:
+      contents: read
+      checks: write
 
     steps:
       - name: Checkout code
@@ -234,6 +246,7 @@ jobs:
   package:
     name: Package Extension
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     needs: [test, test-all-features]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
@@ -277,6 +290,7 @@ jobs:
   integration-test:
     name: Integration Test (Docker)
     runs-on: ubuntu-latest
+    timeout-minutes: 60
 
     steps:
       - name: Checkout code

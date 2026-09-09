@@ -242,3 +242,14 @@ curl -H "Authorization: Bearer $KEY" "https://pi.ruv.io/v1/memories/list?limit=1
 
 - Documentation: https://github.com/ruvnet/claude-flow
 - Issues: https://github.com/ruvnet/claude-flow/issues
+
+## Agent Brain
+
+My knowledge base lives at `/Users/mohammedal-ajmi/Desktop/Claude/Obsidian/Canteen` (per MACHINE, gitignored, its own git repo).
+Orient from its `INDEX.md` when a task needs history, identity or cross-project
+context — under 800 tokens, then **max one hop**: one `wiki/<topic>/index.md` or
+`_catalog.md`, then 2–4 notes. Grep before browse; never read a whole folder.
+End any session that changed a rule, made a decision or learned something
+durable with a recap to `/Users/mohammedal-ajmi/Desktop/Claude/Obsidian/Canteen/raw/YYYY-MM-DD-<slug>.md`
+(What changed · Why · Evidence · Affects). Full contract: `_protocol.md` there.
+**Never copy brain content into this repo — link to it. One home per fact.**
